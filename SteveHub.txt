@@ -1,1 +1,152 @@
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
 
+local gui = Instance.new("ScreenGui")
+gui.Name = "SteveHubLauncher"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = false
+gui.DisplayOrder = 1000
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local parent
+if type(gethui) == "function" then
+    local ok, result = pcall(gethui)
+    if ok then parent = result end
+end
+if not parent then
+    local ok, result = pcall(function() return game:GetService("CoreGui") end)
+    if ok then parent = result end
+end
+if parent then
+    local ok = pcall(function() gui.Parent = parent end)
+    if not ok then gui.Parent = player:WaitForChild("PlayerGui") end
+else
+    gui.Parent = player:WaitForChild("PlayerGui")
+end
+
+local previous = gui.Parent:FindFirstChild("SteveHubLauncher")
+if previous and previous ~= gui then previous:Destroy() end
+
+local background = Instance.new("Frame")
+background.Name = "Backdrop"
+background.Size = UDim2.fromScale(1, 1)
+background.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+background.BackgroundTransparency = 0.42
+background.BorderSizePixel = 0
+background.Parent = gui
+
+local card = Instance.new("Frame")
+card.Name = "ChoiceCard"
+card.AnchorPoint = Vector2.new(0.5, 0.5)
+card.Position = UDim2.fromScale(0.5, 0.5)
+card.Size = UDim2.new(1, -28, 0, 266)
+card.BackgroundColor3 = Color3.fromRGB(21, 20, 16)
+card.BorderSizePixel = 0
+card.Parent = background
+
+local sizeLimit = Instance.new("UISizeConstraint")
+sizeLimit.MaxSize = Vector2.new(360, 266)
+sizeLimit.Parent = card
+
+local cardCorner = Instance.new("UICorner")
+cardCorner.CornerRadius = UDim.new(0, 18)
+cardCorner.Parent = card
+
+local border = Instance.new("UIStroke")
+border.Color = Color3.fromRGB(205, 164, 64)
+border.Thickness = 1.5
+border.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+border.Parent = card
+
+local title = Instance.new("TextLabel")
+title.Name = "Title"
+title.BackgroundTransparency = 1
+title.Position = UDim2.new(0, 20, 0, 21)
+title.Size = UDim2.new(1, -40, 0, 29)
+title.Font = Enum.Font.SourceSansBold
+title.Text = "STEVE HUB"
+title.TextColor3 = Color3.fromRGB(242, 198, 75)
+title.TextSize = 23
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = card
+
+local subtitle = Instance.new("TextLabel")
+subtitle.Name = "Subtitle"
+subtitle.BackgroundTransparency = 1
+subtitle.Position = UDim2.new(0, 20, 0, 51)
+subtitle.Size = UDim2.new(1, -40, 0, 22)
+subtitle.Font = Enum.Font.SourceSans
+subtitle.Text = "Choose Main Or Kaitun"
+subtitle.TextColor3 = Color3.fromRGB(181, 177, 162)
+subtitle.TextSize = 17
+subtitle.TextXAlignment = Enum.TextXAlignment.Left
+subtitle.Parent = card
+
+local function makeButton(name, top, primary)
+    local button = Instance.new("TextButton")
+    button.Name = name .. "Button"
+    button.Position = UDim2.new(0, 20, 0, top)
+    button.Size = UDim2.new(1, -40, 0, 51)
+    button.BackgroundColor3 = primary and Color3.fromRGB(237, 190, 69) or Color3.fromRGB(42, 39, 30)
+    button.BorderSizePixel = 0
+    button.AutoButtonColor = true
+    button.Font = Enum.Font.SourceSansBold
+    button.Text = name:upper()
+    button.TextColor3 = primary and Color3.fromRGB(20, 19, 16) or Color3.fromRGB(245, 211, 126)
+    button.TextSize = 20
+    button.Parent = card
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = button
+    return button
+end
+
+local mainButton = makeButton("Main", 88, true)
+local kaitunButton = makeButton("Kaitun", 152, false)
+
+local status = Instance.new("TextLabel")
+status.Name = "Status"
+status.BackgroundTransparency = 1
+status.Position = UDim2.new(0, 20, 0, 217)
+status.Size = UDim2.new(1, -40, 0, 37)
+status.Font = Enum.Font.SourceSans
+status.Text = "Ready"
+status.TextColor3 = Color3.fromRGB(181, 177, 162)
+status.TextSize = 15
+status.TextTruncate = Enum.TextTruncate.AtEnd
+status.TextWrapped = true
+status.TextXAlignment = Enum.TextXAlignment.Center
+status.Parent = card
+
+local busy = false
+local function launch(which)
+    if busy then return end
+    busy = true
+    status.Text = "Running " .. which .. "..."
+    status.TextColor3 = Color3.fromRGB(242, 198, 75)
+
+    task.spawn(function()
+        local ok, err = pcall(function()
+            if which == "Main" then
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/diang0120/diangbloxfruit/refs/heads/main/diangbloxfruit.lua"))()
+            else
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/diang0120/diangbloxfruit/refs/heads/main/SteveKaitun.txt"))()
+            end
+        end)
+        if not gui.Parent then return end
+        if ok then
+            status.Text = "Running " .. which
+            task.delay(0.8, function()
+                if gui.Parent then gui:Destroy() end
+            end)
+        else
+            status.Text = "Error " .. which .. ": " .. tostring(err):sub(1, 160)
+            status.TextColor3 = Color3.fromRGB(248, 134, 117)
+            busy = false
+        end
+    end)
+end
+
+mainButton.MouseButton1Click:Connect(function() launch("Main") end)
+kaitunButton.MouseButton1Click:Connect(function() launch("Kaitun") end)
